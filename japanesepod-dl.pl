@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 # Ruzgfpegk
-# 2015-04-12 - v0.8
+# 2015-04-12 - v0.8a
 #
 # Script covered by the WTFPL
 #
@@ -635,7 +635,7 @@ if( ! $conf{'pretend'} )
 			
 			if( $filesize != $dl_list{$filepath}->{'length'} )
 			{
-				if( $conf{'skipOredl'} && substr($filesize,-4) eq '.pdf' )
+				if( $conf{'skipOredl'} && substr($filepath,-4) eq '.pdf' )
 				{
 					warn "WARNING: Skipping redownload of $filepath...\n";
 				}
