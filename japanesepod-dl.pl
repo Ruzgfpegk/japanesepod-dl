@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 # Ruzgfpegk
-# 2015-04-19 - v0.8c
+# 2015-04-20 - v0.8d
 #
 # Script covered by the WTFPL
 #
@@ -58,7 +58,7 @@ my %conf = (
 	'pretend'   =>     0,     # To avoid downloading files (just create folders and text files)
 	'overwrite' =>     0,     # To overwrite old text files or already downloaded files (why?). "1-Length" items not included.
 	'dl_limit'  =>     0,     # How many max files to download at each run? 0 for max.
-	'verbose'   =>     1,     # To show each downloaded file on the console
+	'verbose'   =>     0,     # To show each downloaded file on the console
 	'throttle'  =>     1,     # How many seconds should we wait between two files?
 	'fallback'  =>     q{_},  # In paths, by what character do we replace illegal ones? (like '?' or '*')
 	'separator' =>     q{/},  # To do things cleanly, use \\ in Windows and / in Linux/OSX.
@@ -70,6 +70,7 @@ my %conf = (
 	'hierarchy' =>     1,     # Use the official lesson hierarchy instead of dumping everything in the same folder
 	'duplicates'=>     1,     # If you want to download duplicates instead of skipping them (which can skip good files and DL bad ones)
 	'UserAgent' =>     'iTunes/10.2.1 (Macintosh; Intel Mac OS X 10.7) AppleWebKit/534.20.8',
+	'sections'  =>     '01234XZ', # If you only want to download section 0, put '0'. For everything, '01234XZ'. Use with 'hierarchy'=>1.
 );
 
 my %hierarchy = (
@@ -406,9 +407,9 @@ for my $item ( @{$ref->{'channel'}->{'item'}} )
 	
 	# 3 - Intermediate
 		## iLove J-Drama
-		$title =~ s/^(iLove Chapter [IV]+ - .*? - )iLove -/$1/; # Remove useless "iLove". [IV] because we didn't reach X yet.       # Checked 20150419 GO
+		$title =~ s/^(iLove Chapter [IV]+ - .*? -) iLove -/$1/; # Remove useless "iLove". [IV] because we didn't reach X yet.       # Checked 20150419 GO
 		$title =~ s/^(iLove Chapter IV - Nanase's Choice) -$/$1 - (No Subs)/; # Not '- $' because of the trailing space removal     # Checked 20150419 GO
-		$title =~ s/^(iLove J-Drama #2 - iLove Chapter II) - ([^i].*)$/$1 - iLove - $2 /; # Oh well. Chapter title "iLove" missing. # Checked 20150419 GO
+		$title =~ s/^(iLove J-Drama #2 - iLove Chapter II) - ([^i].*)$/$1 - iLove - $2/; # Oh well. Chapter title "iLove" missing.  # Checked 20150419 GO
 		# iLove J-Drama are sometimes numbered with latin numerals
 		if( $title =~ /^iLove Chapter ([IV]+) -/ )
 		{
@@ -520,17 +521,21 @@ for my $item ( @{$ref->{'channel'}->{'item'}} )
 	
 	#print "$separator_count - $title\n" if $separator_count != 2; # Debug line.
 	
+	my $section_number;
+	
 	if( $conf{'hierarchy'} )
 	{
 		BROWSE: for my $level ( sort keys %hierarchy )
 		{
 			for my $chapter ( @{$hierarchy{$level}} )
 			{
-				#                             $1         $2
 				if( $title =~ /^$chapter .* - .*$/ )
 				{
 					my $title2 = $title;
 					my $chapter2 = $chapter;
+					
+					$section_number = substr( $level, 0, 1 );
+					
 					# Using this twice is ugly, but we want to test with an unclean string and affect clean ones...
 					if( $conf{'unicodize'} )
 					{
@@ -553,6 +558,12 @@ for my $item ( @{$ref->{'channel'}->{'item'}} )
 				}# else { print "--> $title | $chapter\n" }
 			}
 		}
+	}
+	
+	# The section number must be contained in the 'sections' option to continue
+	if( defined $section_number && index( $conf{'sections'}, $section_number ) == -1 )
+	{
+		next;
 	}
 	
 	# We also put this here for non-hierarchy
@@ -662,12 +673,12 @@ for my $item ( @{$ref->{'channel'}->{'item'}} )
 			elsif( $dl_list{$filepath}->{'length'} > 1 && $item->{'enclosure'}->{'length'} == 1 )
 			{
 				print "WARNING: Entry '$filepath' already exists with same URL " . $item->{'enclosure'}->{'url'} .
-				    " but with a bogus size... skipping.\n";
+				    " but with a bogus size... skipping.\n" if $conf{'verbose'};
 			}
 			else # Size of "1" in both cases, or different sizes
 			{
 				print "WARNING: Entry '$filepath' already exists with same URL " . $item->{'enclosure'}->{'url'} .
-				    "... skipping.\n";
+				    "... skipping.\n" if $conf{'verbose'};
 			}
 		}
 		else
@@ -713,9 +724,9 @@ if( ! $conf{'pretend'} )
 			
 			if( $filesize != $dl_list{$filepath}->{'length'} )
 			{
-				if( $conf{'skipOredl'} && substr($filepath,-4) eq '.pdf' )
+				if( $dl_list{$filepath}->{'length'} == 1 || ( $conf{'skipOredl'} && substr($filepath,-4) eq '.pdf' ) )
 				{
-					warn "WARNING: Skipping redownload of $filepath...\n";
+					warn "WARNING: Skipping redownload of $filepath...\n" if $conf{'verbose'};
 				}
 				else
 				{
