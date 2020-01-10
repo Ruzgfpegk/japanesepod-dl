@@ -1,0 +1,25 @@
+# Globals
+severity = 3
+verbose = 8
+
+# Minimize complexity in code that is outside of subroutines.
+[Modules::ProhibitExcessMainComplexity]
+max_mccabe = 90
+
+# Always use the `/x' modifier with regular expressions.
+[RegularExpressions::RequireExtendedFormatting]
+# The number of characters that a regular expression must contain before this policy will complain.
+# Minimum value 0. No maximum.
+minimum_regex_length_to_complain_about = 120
+
+# Split long regexps into smaller `qr//' chunks.
+[RegularExpressions::ProhibitComplexRegexes]
+# The maximum number of characters to allow in a regular expression.
+# Minimum value 1. No maximum.
+max_characters = 120
+
+# Don't write deeply nested loops and conditionals.
+[ControlStructures::ProhibitDeepNests]
+# The maximum number of nested constructs to allow.
+# Minimum value 1. No maximum.
+max_nests = 6
